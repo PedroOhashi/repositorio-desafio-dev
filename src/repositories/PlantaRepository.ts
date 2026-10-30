@@ -40,3 +40,9 @@ export const decrementEstoqueSeHouver = async (id: number, quantidade: number) =
 
   return resultado.count;
 };
+
+export const findPrecoEEstoque = async () => {
+  return await prisma.planta.findMany({
+    select: { preco: true, estoque: true },
+  });
+};
