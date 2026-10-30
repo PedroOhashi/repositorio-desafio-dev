@@ -75,3 +75,110 @@ export const createPlanta = async (req: Request, res: Response) => {
     return res.status(500).json({ message: "Erro ao criar planta." });
   }
 };
+
+// Converte o :id da URL (que chega como texto) em número.
+// Devolve null se não for um inteiro positivo que caiba no Int do banco.
+const lerId = (valor: string): number | null => {
+  const id = Number(valor);
+
+  if (!Number.isInteger(id) || id <= 0 || id > 2147483647) {
+    return null;
+  }
+
+  return id;
+};
+
+export const readAllPlantas = async (req: Request, res: Response) => {
+  try {
+    const plantas = await PlantaRepository.findAllPlantas();
+
+    return res.status(200).json(plantas);
+  } catch (error) {
+    console.error(error);
+    return res.status(500).json({ message: "Erro ao buscar plantas." });
+  }
+};
+
+export const readPlantaById = async (req: Request, res: Response) => {
+  try {
+    const id = lerId(req.params.id);
+
+    if (id === null) {
+      return res.status(400).json({ message: "O id deve ser um número inteiro maior que zero." });
+    }
+
+    const planta = await PlantaRepository.findPlantaById(id);
+
+    if (!planta) {
+      return res.status(404).json({ message: "Planta não encontrada." });
+    }
+
+    return res.status(200).json(planta);
+  } catch (error) {
+    console.error(error);
+    return res.status(500).json({ message: "Erro ao buscar planta." });
+  }
+};
+
+export const updatePlanta = async (req: Request, res: Response) => {
+  try {
+    const id = lerId(req.params.id);
+
+    if (id === null) {
+      return res.status(400).json({ message: "O id deve ser um número inteiro maior que zero." });
+    }
+
+    const erro = validarCampos(req.body, false);
+
+    if (erro) {
+      return res.status(400).json({ message: erro });
+    }
+
+    const planta = await PlantaRepository.findPlantaById(id);
+
+    if (!planta) {
+      return res.status(404).json({ message: "Planta não encontrada." });
+    }
+
+    const { nome, especie, preco, estoque, luminosidade, petFriendly, regaACadaDias } = req.body;
+
+    // Campos não enviados chegam como undefined e o Prisma os ignora
+    const plantaAtualizada = await PlantaRepository.updatePlanta(id, {
+      nome,
+      especie,
+      preco,
+      estoque,
+      luminosidade,
+      petFriendly,
+      regaACadaDias,
+    });
+
+    return res.status(200).json(plantaAtualizada);
+  } catch (error) {
+    console.error(error);
+    return res.status(500).json({ message: "Erro ao atualizar planta." });
+  }
+};
+
+export const deletePlanta = async (req: Request, res: Response) => {
+  try {
+    const id = lerId(req.params.id);
+
+    if (id === null) {
+      return res.status(400).json({ message: "O id deve ser um número inteiro maior que zero." });
+    }
+
+    const planta = await PlantaRepository.findPlantaById(id);
+
+    if (!planta) {
+      return res.status(404).json({ message: "Planta não encontrada." });
+    }
+
+    await PlantaRepository.deletePlanta(id);
+
+    return res.status(204).send();
+  } catch (error) {
+    console.error(error);
+    return res.status(500).json({ message: "Erro ao deletar planta." });
+  }
+};
