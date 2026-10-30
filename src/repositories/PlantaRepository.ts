@@ -7,9 +7,13 @@ export const createPlanta = async (data: Prisma.PlantaCreateInput) => {
   });
 };
 
-export const findAllPlantas = async (filtros: Prisma.PlantaWhereInput = {}) => {
+export const findAllPlantas = async (
+  filtros: Prisma.PlantaWhereInput = {},
+  ordem?: "preco" | "nome",
+) => {
   return await prisma.planta.findMany({
     where: filtros,
+    orderBy: ordem === "preco" ? { preco: "asc" } : ordem === "nome" ? { nome: "asc" } : undefined,
   });
 };
 

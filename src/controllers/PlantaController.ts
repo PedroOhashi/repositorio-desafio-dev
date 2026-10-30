@@ -90,7 +90,7 @@ const lerId = (valor: string): number | null => {
 
 export const readAllPlantas = async (req: Request, res: Response) => {
   try {
-    const { luminosidade, petFriendly } = req.query;
+    const { luminosidade, petFriendly, nome, ordem } = req.query;
 
     if (
       luminosidade !== undefined &&
@@ -107,11 +107,30 @@ export const readAllPlantas = async (req: Request, res: Response) => {
       });
     }
 
-    const plantas = await PlantaRepository.findAllPlantas({
-      luminosidade: luminosidade as Luminosidade | undefined,
-      // Se não foi enviado, continua undefined (e o Prisma ignora o filtro)
-      petFriendly: petFriendly === undefined ? undefined : petFriendly === "true",
-    });
+    if (nome !== undefined && (typeof nome !== "string" || nome.trim() === "")) {
+      return res.status(400).json({
+        message: "O filtro nome deve ser um texto não vazio.",
+      });
+    }
+
+    if (ordem !== undefined && ordem !== "preco" && ordem !== "nome") {
+      return res.status(400).json({
+        message: "O parâmetro ordem deve ser preco ou nome.",
+      });
+    }
+
+    const plantas = await PlantaRepository.findAllPlantas(
+      {
+        luminosidade: luminosidade as Luminosidade | undefined,
+        // Se não foi enviado, continua undefined (e o Prisma ignora o filtro)
+        petFriendly: petFriendly === undefined ? undefined : petFriendly === "true",
+        nome:
+          nome === undefined
+            ? undefined
+            : { contains: (nome as string).trim(), mode: "insensitive" },
+      },
+      ordem as "preco" | "nome" | undefined,
+    );
 
     return res.status(200).json(plantas);
   } catch (error) {
